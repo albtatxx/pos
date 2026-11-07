@@ -1,0 +1,200 @@
+/* Custom Styles & Print Styles for Telecom POS System */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root {
+  --font-cairo: 'Cairo', sans-serif;
+  --font-tajawal: 'Tajawal', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-tajawal);
+  direction: rtl;
+  text-align: right;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .font-cairo, button, nav a {
+  font-family: var(--font-cairo);
+}
+
+.font-mono-num {
+  font-family: var(--font-mono), var(--font-cairo);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c3c6d7;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #737686;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #434655;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #737686;
+}
+
+/* Dark mode custom overrides */
+.dark body {
+  background-color: #0b1120;
+  color: #f1f5f9;
+}
+.dark .bg-surface {
+  background-color: #0b1120 !important;
+}
+.dark .bg-surface-container-lowest {
+  background-color: #111827 !important;
+  color: #f3f4f6;
+}
+.dark .bg-surface-container-low {
+  background-color: #1e293b !important;
+}
+.dark .bg-surface-container {
+  background-color: #1e293b !important;
+}
+.dark .bg-surface-container-high {
+  background-color: #334155 !important;
+}
+.dark .text-on-surface {
+  color: #f8fafc !important;
+}
+.dark .text-on-surface-variant {
+  color: #94a3b8 !important;
+}
+.dark .border-outline-variant {
+  border-color: #334155 !important;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.view-section {
+  animation: fadeIn 0.18s ease-in-out;
+}
+
+/* Toast Container */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 420px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-cairo);
+  font-weight: 600;
+  font-size: 14px;
+  animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.toast-success {
+  background-color: #064e3b;
+  color: #ecfdf5;
+  border-right: 4px solid #10b981;
+}
+
+.toast-error {
+  background-color: #7f1d1d;
+  color: #fef2f2;
+  border-right: 4px solid #ef4444;
+}
+
+.toast-info {
+  background-color: #1e3a8a;
+  color: #eff6ff;
+  border-right: 4px solid #3b82f6;
+}
+
+.toast-warning {
+  background-color: #78350f;
+  color: #fffbeb;
+  border-right: 4px solid #f59e0b;
+}
+
+/* Thermal POS Receipt Printing Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  #receipt-modal,
+  #receipt-modal * {
+    visibility: visible;
+  }
+  
+  #receipt-modal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent !important;
+    display: block !important;
+  }
+  
+  #receipt-modal-backdrop,
+  #receipt-modal-actions,
+  #receipt-modal-close-btn {
+    display: none !important;
+  }
+  
+  #receipt-print-area {
+    visibility: visible;
+    width: 78mm !important;
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 5mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12px !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  #receipt-print-area * {
+    color: #000000 !important;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+}
