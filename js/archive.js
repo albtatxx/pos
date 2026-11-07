@@ -271,3 +271,10 @@ const Archive = (function () {
     exportCSV
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.Archive = Archive;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Archive;
+}

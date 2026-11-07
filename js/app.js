@@ -439,6 +439,13 @@ const App = (function () {
   };
 })();
 
+if (typeof window !== 'undefined') {
+  window.App = App;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = App;
+}
+
 // Boot on window DOM ready
 window.addEventListener('DOMContentLoaded', () => {
   App.init();

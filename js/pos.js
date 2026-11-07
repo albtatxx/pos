@@ -65,22 +65,20 @@ const POS = (function () {
 
   function handleBarcodeEnter(code) {
     if (!code) return;
-    const product = Store.getProductByBarcode(code);
+    const product = Store.getProductByBarcode(code) || Store.getProduct(code);
     if (product) {
       if (product.isCustomService) {
         openCommissionModal(product);
       } else {
         addToCart(product.id);
-        App.playSound('beep');
-        App.showToast(`تمت إضافة: ${product.name}`, 'info');
       }
       const searchInput = document.getElementById('pos-search-input');
       if (searchInput) searchInput.value = '';
       searchQuery = '';
       renderProducts();
     } else {
-      App.playSound('error');
-      App.showToast(`لم يتم العثور على صنف بالباركود: ${code}`, 'error');
+      if (window.App && window.App.playSound) window.App.playSound('error');
+      if (window.App && window.App.showToast) window.App.showToast(`لم يتم العثور على صنف بالباركود: ${code}`, 'error');
     }
   }
 
@@ -173,7 +171,8 @@ const POS = (function () {
       }
 
       return `
-        <div class="group relative flex flex-col justify-between p-space-md bg-surface-container-lowest rounded-2xl border border-transparent hover:border-primary-container shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all duration-200 ${isOutOfStock ? 'opacity-60' : ''}">
+        <div onclick="POS.handleCardClick('${prod.id}')"
+          class="group relative flex flex-col justify-between p-space-md bg-surface-container-lowest rounded-2xl border border-transparent hover:border-primary-container shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all duration-200 cursor-pointer select-none active:scale-[0.98] ${isOutOfStock ? 'opacity-60 cursor-not-allowed' : ''}">
           <div>
             <div class="flex items-start justify-between gap-2 mb-3">
               <div class="w-10 h-10 rounded-xl ${prod.color || 'bg-primary/10 text-primary'} flex items-center justify-center shrink-0">
@@ -198,14 +197,14 @@ const POS = (function () {
             </div>
 
             ${isService ? `
-              <button onclick="POS.openCommissionModalById('${prod.id}')"
+              <button onclick="event.stopPropagation(); POS.openCommissionModalById('${prod.id}')"
                 class="flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-xl font-label-md shadow-sm hover:bg-primary-container transition-all"
                 type="button">
                 <span class="material-symbols-outlined text-[16px]">tune</span>
                 <span>تحديد</span>
               </button>
             ` : `
-              <button onclick="POS.addToCart('${prod.id}')"
+              <button onclick="event.stopPropagation(); POS.addToCart('${prod.id}')"
                 ${isOutOfStock ? 'disabled' : ''}
                 class="flex items-center justify-center w-9 h-9 rounded-xl ${isOutOfStock ? 'bg-surface-container text-on-surface-variant cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-container shadow-sm active:scale-95'} transition-all"
                 type="button" title="إضافة للفاتورة">
@@ -218,28 +217,55 @@ const POS = (function () {
     }).join('');
   }
 
+  // --- Card Tap Handler ---
+  function handleCardClick(productId) {
+    const product = Store.getProduct(productId);
+    if (!product) return;
+    if (product.isCustomService) {
+      openCommissionModal(product);
+    } else {
+      addToCart(productId);
+    }
+  }
+
   // --- Cart Management ---
   function addToCart(productId) {
     const product = Store.getProduct(productId);
-    if (!product) return;
-
-    if (!product.isCustomService && product.stock <= 0) {
-      App.showToast(`عفواً، الكمية نفذت من مخزن: ${product.name}`, 'warning');
+    if (!product) {
+      console.warn('Product not found in Store:', productId);
+      if (window.App && window.App.showToast) {
+        window.App.showToast(`تعذر العثور على الصنف (${productId})`, 'warning');
+      }
       return;
     }
 
-    const existingIdx = cart.findIndex(item => item.productId === productId && !item.isCustomService);
+    if (product.isCustomService) {
+      openCommissionModal(product);
+      return;
+    }
+
+    if (product.stock <= 0) {
+      if (window.App && window.App.showToast) {
+        window.App.showToast(`عفواً، الكمية نفذت من مخزن: ${product.name}`, 'warning');
+      }
+      return;
+    }
+
+    const cleanId = String(product.id).trim();
+    const existingIdx = cart.findIndex(item => String(item.productId).trim() === cleanId && !item.isCustomService);
+
     if (existingIdx !== -1) {
-      // Check stock limit
-      if (!product.isCustomService && cart[existingIdx].quantity >= product.stock) {
-        App.showToast(`لا يمكنك إضافة المزيد، الكمية المتوفرة ${product.stock} فقط`, 'warning');
+      if (cart[existingIdx].quantity >= product.stock) {
+        if (window.App && window.App.showToast) {
+          window.App.showToast(`الكمية المتوفرة ${product.stock} فقط في المخزن`, 'warning');
+        }
         return;
       }
       cart[existingIdx].quantity += 1;
     } else {
       cart.push({
         productId: product.id,
-        barcode: product.barcode,
+        barcode: product.barcode || product.id,
         name: product.name,
         category: product.category,
         costPrice: Number(product.costPrice) || 0,
@@ -249,8 +275,14 @@ const POS = (function () {
       });
     }
 
-    App.playSound('beep');
+    // Always render cart first to update invoice immediately
     renderCart();
+
+    // Feedback
+    try {
+      if (window.App && window.App.playSound) window.App.playSound('beep');
+      if (window.App && window.App.showToast) window.App.showToast(`تمت إضافة: ${product.name}`, 'info');
+    } catch(e) {}
   }
 
   function addCustomServiceToCart(serviceItem) {
@@ -269,8 +301,11 @@ const POS = (function () {
       isCustomService: true
     });
 
-    App.playSound('beep');
     renderCart();
+
+    try {
+      if (window.App && window.App.playSound) window.App.playSound('beep');
+    } catch(e) {}
   }
 
   function updateQty(index, delta) {
@@ -334,15 +369,27 @@ const POS = (function () {
     if (!list) return;
 
     if (cart.length === 0) {
-      if (emptyState) emptyState.classList.remove('hidden');
-      if (itemsContainer) itemsContainer.classList.add('hidden');
+      if (emptyState) {
+        emptyState.style.display = 'flex';
+        emptyState.classList.remove('hidden');
+      }
+      if (itemsContainer) {
+        itemsContainer.style.display = 'none';
+        itemsContainer.classList.add('hidden');
+      }
       if (checkoutBtn) checkoutBtn.disabled = true;
       renderCartTotals();
       return;
     }
 
-    if (emptyState) emptyState.classList.add('hidden');
-    if (itemsContainer) itemsContainer.classList.remove('hidden');
+    if (emptyState) {
+      emptyState.style.display = 'none';
+      emptyState.classList.add('hidden');
+    }
+    if (itemsContainer) {
+      itemsContainer.style.display = 'block';
+      itemsContainer.classList.remove('hidden');
+    }
     if (checkoutBtn) checkoutBtn.disabled = false;
 
     const settings = Store.getSettings();
@@ -703,7 +750,9 @@ const POS = (function () {
   return {
     init,
     setCategory,
+    handleCardClick,
     addToCart,
+    addCustomServiceToCart,
     updateQty,
     removeFromCart,
     clearCart,
@@ -722,3 +771,10 @@ const POS = (function () {
     renderProducts
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.POS = POS;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = POS;
+}

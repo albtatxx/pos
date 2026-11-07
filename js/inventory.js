@@ -354,3 +354,10 @@ const Inventory = (function () {
     saveWalletBalance
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.Inventory = Inventory;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Inventory;
+}

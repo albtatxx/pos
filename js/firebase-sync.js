@@ -320,8 +320,14 @@ async function pullAllDataFromFirebase() {
     const prodSnap = await getDocs(collection(db, "products"));
     if (!prodSnap.empty) {
       const prods = [];
-      prodSnap.forEach(d => prods.push(d.data()));
-      localStorage.setItem("telecom_pos_products", JSON.stringify(prods));
+      prodSnap.forEach(d => {
+        const item = d.data();
+        if (!item.id) item.id = d.id;
+        prods.push(item);
+      });
+      if (prods.length > 0) {
+        localStorage.setItem("telecom_pos_products", JSON.stringify(prods));
+      }
     }
 
     // 4. Users
@@ -383,11 +389,16 @@ function setupRealtimeListeners() {
 
       if (!snapshot.empty) {
         const cloudProds = [];
-        snapshot.forEach(d => cloudProds.push(d.data()));
-        localStorage.setItem("telecom_pos_products", JSON.stringify(cloudProds));
-
-        if (window.POS && window.POS.renderProducts) window.POS.renderProducts();
-        if (window.Inventory && window.Inventory.renderProductsTable) window.Inventory.renderProductsTable();
+        snapshot.forEach(d => {
+          const item = d.data();
+          if (!item.id) item.id = d.id;
+          cloudProds.push(item);
+        });
+        if (cloudProds.length > 0) {
+          localStorage.setItem("telecom_pos_products", JSON.stringify(cloudProds));
+          if (window.POS && window.POS.renderProducts) window.POS.renderProducts();
+          if (window.Inventory && window.Inventory.renderProductsTable) window.Inventory.renderProductsTable();
+        }
       }
 
       isConnected = true;

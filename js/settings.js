@@ -158,3 +158,10 @@ const Settings = (function () {
     handleFullSystemReset
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.Settings = Settings;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Settings;
+}

@@ -317,3 +317,10 @@ const Analytics = (function () {
     printFinancialReport
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.Analytics = Analytics;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Analytics;
+}

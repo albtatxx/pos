@@ -751,17 +751,37 @@ const Store = (function () {
 
   // --- Products & Services API ---
   function getProducts() {
-    return getRaw(KEYS.PRODUCTS, []);
+    let prods = getRaw(KEYS.PRODUCTS, null);
+    if (!Array.isArray(prods) || prods.length === 0) {
+      prods = JSON.parse(JSON.stringify(SEED_PRODUCTS));
+      setRaw(KEYS.PRODUCTS, prods);
+    }
+    // Guarantee required fields on every product
+    prods.forEach((p, idx) => {
+      if (!p.id) p.id = 'PRD-' + (100 + idx);
+      if (typeof p.stock !== 'number') p.stock = p.isCustomService ? 99999 : 50;
+      if (typeof p.sellingPrice !== 'number') p.sellingPrice = parseFloat(p.sellingPrice) || 0;
+      if (typeof p.costPrice !== 'number') p.costPrice = parseFloat(p.costPrice) || 0;
+    });
+    return prods;
   }
 
   function getProduct(id) {
-    return getProducts().find(p => p.id === id);
+    if (!id && id !== 0) return null;
+    const prods = getProducts();
+    const cleanId = String(id).trim();
+    let found = prods.find(p => String(p.id).trim() === cleanId || String(p.barcode || '').trim() === cleanId);
+    if (!found) {
+      found = SEED_PRODUCTS.find(p => String(p.id).trim() === cleanId || String(p.barcode || '').trim() === cleanId);
+    }
+    return found || null;
   }
 
   function getProductByBarcode(code) {
-    if (!code) return null;
-    const clean = code.trim();
-    return getProducts().find(p => p.barcode === clean || p.id === clean);
+    if (!code && code !== 0) return null;
+    const clean = String(code).trim();
+    const prods = getProducts();
+    return prods.find(p => String(p.barcode || '').trim() === clean || String(p.id).trim() === clean) || null;
   }
 
   function saveProduct(productData) {
@@ -974,6 +994,7 @@ const Store = (function () {
     getTransactionsForDate,
     getTodayTransactions,
     getCurrentMonthTransactions,
+    generateInvoiceNumber,
     addTransaction,
     manualResetShift,
     getDashboardStats,

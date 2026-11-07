@@ -271,3 +271,10 @@ const Employees = (function () {
     deleteUser
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.Employees = Employees;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Employees;
+}
